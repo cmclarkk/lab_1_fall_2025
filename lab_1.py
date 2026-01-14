@@ -71,6 +71,7 @@ class JointStateSubscriber(Node):
         joint_pos = msg.position[joint_index]
         joint_vel = msg.velocity[joint_index]
 
+
         self.joint_pos = joint_pos
         self.joint_vel = joint_vel
 
