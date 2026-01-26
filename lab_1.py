@@ -26,6 +26,7 @@ DEAD_BAND_SIZE = 0.095
 class JointStateSubscriber(Node):
     pos_error_sum = 0.0
     pos_error_last = 0.0
+    direction = 0
 
     def __init__(self):
         super().__init__("joint_state_subscriber")
@@ -62,7 +63,20 @@ class JointStateSubscriber(Node):
         
         return target_joint_pos, target_joint_vel
 
-    def calculate_torque(self, joint_pos, joint_vel, target_joint_pos, target_joint_vel):
+    def calculate_torque_for_pendulum_control(self, joint_pos):
+        ####
+        #### YOUR CODE HERE
+        ####
+        if joint_pos > 0.20:
+            self.direction = -1
+        if joint_pos < -0.10:
+            self.direction = 1
+
+        torque = self.direction * 0.135
+
+        return torque
+
+    def calculate_torque_for_leg_tracking(self, joint_pos, joint_vel, target_joint_pos, target_joint_vel):
         ####
         #### YOUR CODE HERE
         ####
@@ -84,7 +98,7 @@ class JointStateSubscriber(Node):
         """Print joint information every 2 control loops"""
         if self.print_counter == 0:
             self.get_logger().info(
-                f"Pos: {self.joint_pos:.2f}, Target Pos: {self.target_joint_pos:.2f}, Sum: {self.pos_error_sum:.2f}, Target Vel: {self.target_joint_vel:.2f}, Tor: {self.calculated_torque:.2f}"
+                f"Pos: {self.joint_pos:.2f}, Target Pos: {self.target_joint_pos:.2f}, Tor: {self.calculated_torque:.2f}"
             )
         self.print_counter += 1
         self.print_counter %= 2
@@ -109,10 +123,16 @@ class JointStateSubscriber(Node):
 
     def control_loop(self):
         """Control control loop to calculate and publish torque commands"""
-        self.target_joint_pos, self.target_joint_vel = self.get_target_joint_info()
-        self.calculated_torque = self.calculate_torque(
-            self.joint_pos, self.joint_vel, self.target_joint_pos, self.target_joint_vel
-        )
+        if leg_tracking: 
+            self.target_joint_pos, self.target_joint_vel = self.get_target_joint_info()
+            self.calculated_torque = self.calculate_torque_for_leg_tracking(
+                self.joint_pos, self.joint_vel, self.target_joint_pos, self.target_joint_vel
+            )
+        elif pendulum_control:
+            self.calculated_torque = self.calculate_torque_for_pendulum_control(self.joint_pos)
+        else:
+            self.calculated_torque = 0
+            
         self.print_info()
         self.publish_torque(self.calculated_torque)
 
