@@ -12,9 +12,6 @@ JOINT_NAME_LEAD = "leg_front_r_3" #"leg_front_l_1"
 
 ####
 ####
-KP = 0.2  # YOUR KP VALUE
-KI = 0.3 # YOUR KI VALUE
-KD = 0.05  # YOUR KD VALUE
 ####
 ####
 LOOP_RATE = 200  # Hz
@@ -26,6 +23,7 @@ DEAD_BAND_SIZE = 0.095
 class JointStateSubscriber(Node):
     pos_error_sum = 0.0
     pos_error_last = 0.0
+    direction = 0
 
     def __init__(self):
         super().__init__("joint_state_subscriber")
@@ -62,29 +60,24 @@ class JointStateSubscriber(Node):
         
         return target_joint_pos, target_joint_vel
 
-    def calculate_torque(self, joint_pos, joint_vel, target_joint_pos, target_joint_vel):
+    def calculate_torque(self, joint_pos):
         ####
         #### YOUR CODE HERE
         ####
-        pos_error = target_joint_pos - joint_pos
-        pos_error_derivative = (pos_error - self.pos_error_last) / DELTA_T
-        self.pos_error_sum += pos_error
-        self.pos_error_sum = np.clip(self.pos_error_sum, -0.3, 0.3)
-        torque = KP * pos_error + KI * self.pos_error_sum + KD * pos_error_derivative
-        if torque > 0:
-            torque = max(torque, DEAD_BAND_SIZE)
-        elif torque < 0:
-            torque = min(torque, -DEAD_BAND_SIZE)
+        if joint_pos > 0.20:
+            self.direction = -1
+        if joint_pos < -0.10:
+            self.direction = 1
 
-        self.pos_error_last = pos_error
-        
+        torque = self.direction * 0.14
+
         return torque
 
     def print_info(self):
         """Print joint information every 2 control loops"""
         if self.print_counter == 0:
             self.get_logger().info(
-                f"Pos: {self.joint_pos:.2f}, Target Pos: {self.target_joint_pos:.2f}, Sum: {self.pos_error_sum:.2f}, Target Vel: {self.target_joint_vel:.2f}, Tor: {self.calculated_torque:.2f}"
+                f"Pos: {self.joint_pos:.2f}, Tor: {self.calculated_torque:.2f}"
             )
         self.print_counter += 1
         self.print_counter %= 2
@@ -99,7 +92,6 @@ class JointStateSubscriber(Node):
         joint_pos_lead = msg.position[joint_index_lead]
         joint_vel_lead = msg.velocity[joint_index_lead]
 
-
         self.joint_pos = joint_pos
         self.joint_vel = joint_vel        
         self.joint_pos_lead = joint_pos_lead
@@ -109,10 +101,7 @@ class JointStateSubscriber(Node):
 
     def control_loop(self):
         """Control control loop to calculate and publish torque commands"""
-        self.target_joint_pos, self.target_joint_vel = self.get_target_joint_info()
-        self.calculated_torque = self.calculate_torque(
-            self.joint_pos, self.joint_vel, self.target_joint_pos, self.target_joint_vel
-        )
+        self.calculated_torque = self.calculate_torque( self.joint_pos)
         self.print_info()
         self.publish_torque(self.calculated_torque)
 

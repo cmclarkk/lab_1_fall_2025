@@ -5,15 +5,23 @@ controller_manager:
     forward_command_controller:
       type: forward_command_controller/MultiInterfaceForwardCommandController
 
+    forward_command_controller_lead:
+      type: forward_command_controller/MultiInterfaceForwardCommandController
+
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
     
     imu_sensor_broadcaster:
       type: imu_sensor_broadcaster/IMUSensorBroadcaster
 
+forward_command_controller_lead:
+  ros__parameters:
+    joint: 'leg_front_r_3'
+    interface_names: ['effort', 'kp', 'kd']
+
 forward_command_controller:
   ros__parameters:
-    joint: 'leg_front_l_1'
+    joint: 'leg_front_l_3'
     interface_names: ['effort', 'kp', 'kd']
 
 joint_state_broadcaster:

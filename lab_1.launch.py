@@ -82,12 +82,29 @@ def generate_launch_description():
             "30",
         ],
     )
+    robot_controller_spawner_lead = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[
+            "forward_command_controller_lead",
+            "--controller-manager",
+            "/controller_manager",
+            "--controller-manager-timeout",
+            "30",
+        ],
+    )
 
     # Delay start of robot_controller after `joint_state_broadcaster`
     delay_robot_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=joint_state_broadcaster_spawner,
             on_exit=[robot_controller_spawner],
+        )
+    )
+    delay_robot_controller_spawner_after_joint_state_broadcaster_spawner_lead = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[robot_controller_spawner_lead],
         )
     )
 
@@ -97,6 +114,7 @@ def generate_launch_description():
         joint_state_broadcaster_spawner,
         imu_sensor_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
+        delay_robot_controller_spawner_after_joint_state_broadcaster_spawner_lead,
     ]
 
     return LaunchDescription(nodes)
