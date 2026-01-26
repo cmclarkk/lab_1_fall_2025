@@ -21,6 +21,8 @@ LOOP_RATE = 200  # Hz
 DELTA_T = 1 / LOOP_RATE
 MAX_TORQUE = 2.0
 DEAD_BAND_SIZE = 0.095
+PENDULUM_CONTROL = True
+LEG_TRACKING_CONTROL = not PENDULUM_CONTROL
 
 
 class JointStateSubscriber(Node):
@@ -123,13 +125,11 @@ class JointStateSubscriber(Node):
 
     def control_loop(self):
         """Control control loop to calculate and publish torque commands"""
-        if leg_tracking: 
-            self.target_joint_pos, self.target_joint_vel = self.get_target_joint_info()
-            self.calculated_torque = self.calculate_torque_for_leg_tracking(
-                self.joint_pos, self.joint_vel, self.target_joint_pos, self.target_joint_vel
-            )
-        elif pendulum_control:
+        if PENDULUM_CONTROL:
             self.calculated_torque = self.calculate_torque_for_pendulum_control(self.joint_pos)
+        elif LEG_TRACKING_CONTROL: 
+            self.target_joint_pos, self.target_joint_vel = self.get_target_joint_info()
+            self.calculated_torque = self.calculate_torque_for_leg_tracking(self.joint_pos, self.joint_vel, self.target_joint_pos, self.target_joint_vel)
         else:
             self.calculated_torque = 0
             
